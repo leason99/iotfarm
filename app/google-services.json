@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "963155928471",
+    "firebase_url": "https://iot-farm-fe757.firebaseio.com",
+    "project_id": "iot-farm-fe757",
+    "storage_bucket": "iot-farm-fe757.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:963155928471:android:1fe8fee12424558c",
+        "android_client_info": {
+          "package_name": "com.example.junyouyang.iotfarmapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "963155928471-2ehq78aqorcvnsscolcq0ulmu9m87imf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.junyouyang.iotfarmapp",
+            "certificate_hash": "96a435020df2dad6d3e3043b72d1cb32c0f40613"
+          }
+        },
+        {
+          "client_id": "963155928471-58qfj5prtu7dbaoqot48plqh2hakfto0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIevXzt0RagU1Qtpcrg0p4sdTde6irfWM"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "963155928471-58qfj5prtu7dbaoqot48plqh2hakfto0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
