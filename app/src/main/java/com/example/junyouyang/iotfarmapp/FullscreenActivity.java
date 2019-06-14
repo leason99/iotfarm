@@ -6,6 +6,8 @@ import com.example.junyouyang.iotfarmapp.intItemChart;
 import android.annotation.SuppressLint;
 
 import android.graphics.Color;
+import android.graphics.DashPathEffect;
+import android.os.AsyncTask;
 import android.os.Message;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -30,21 +32,42 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.junyouyang.iotfarmapp.models.CityWeather;
 import com.example.junyouyang.iotfarmapp.utils.IconProvider;
+import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.LimitLine;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.formatter.IFillFormatter;
+import com.github.mikephil.charting.interfaces.dataprovider.LineDataProvider;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.github.mikephil.charting.utils.Utils;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
+import com.squareup.picasso.Downloader;
 import com.squareup.picasso.Picasso;
 
+import org.bson.Document;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -77,7 +100,7 @@ public class FullscreenActivity extends AppCompatActivity {
      * and a change of the status and navigation bar.
      */
     private static final int UI_ANIMATION_DELAY = 300;
-
+    private LineChart chart;
     private View mContentView;
     private View mControlsView;
     //private PieChart picChart,picChart2,picChart3;
@@ -101,67 +124,29 @@ public class FullscreenActivity extends AppCompatActivity {
 
         mVisible = true;
         toggle();
-        //mControlsView = findViewById(R.id.fullscreen_content_controls);
-        //mContentView = findViewById(R.id.fullscreen_content);
-
-
-        // Set up the user interaction to manually show or hide the system UI.
-        /*mContentView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                toggle();
-            }
-        });
-*/
-        // Upon interacting with UI controls, delay any scheduled hide()
-        // operations to prevent the jarring behavior of controls going away
-        // while interacting with the UI.
-
 
         mQueue = Volley.newRequestQueue(this);
-
-        //picChart = findViewById(R.id.chart1);
-        //picChart2 = findViewById(R.id.chart2);
-        //picChart3 = findViewById(R.id.chart3);
         picChart = new intItemChart(this,(PieChart)findViewById(R.id.chart1));
         picChart2 = new intItemChart(this,(PieChart)findViewById(R.id.chart2));
         picChart3 = new intItemChart(this,(PieChart)findViewById(R.id.chart3));
         picChart4 = new intItemChart(this,(PieChart)findViewById(R.id.chart4));
 
-/*
 
-        List<PieEntry> strings = new ArrayList<>();
-        strings.add(new PieEntry(30f,""));
-        strings.add(new PieEntry(70f,""));
-        PieDataSet dataSet = new PieDataSet(strings,"Label");
-        ArrayList<Integer> colors = new ArrayList<Integer>();
-        colors.add(getResources().getColor(R.color.colorPrimary));
-        colors.add(getResources().getColor(R.color.Transparent));
-        dataSet.setColors(colors);
-        PieData pieData = new PieData(dataSet);
-        pieData.setDrawValues(false);
-
-        picChart.setRotationEnabled(false);
-        picChart.setCenterText("LUX");
-        picChart.setMaxAngle(180f);
-        picChart.setRotationAngle(180f);
-        picChart.setData(pieData);
-        picChart.setDrawEntryLabels(false);
-        picChart.getLegend().setEnabled(false);
-        picChart.getDescription().setEnabled(false);
-        picChart.invalidate();
-
-*/
-
-        //setChart(picChart,"lux",50,100);
-        //setChart(picChart2,"temp",30,50);
-        //setChart(picChart3,"rain",50,100);
-
-        //setChart(picChart4,"moisture",50,100);
         picChart.initChart("Lux",50,100);
         picChart2.initChart("Temp",50,100);
         picChart3.initChart("Rain",50,100);
         picChart4.initChart("Moisture",50,100);
+
+        PieChart pichart =(PieChart)findViewById(R.id.chart1);
+        pichart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+
+
+            }
+        });
 
       final Handler handler = new Handler();
 // Define the code block to be executed
@@ -174,8 +159,7 @@ public class FullscreenActivity extends AppCompatActivity {
                 picChart2.getData("http://140.118.25.64:23000/resources/qiot/things/107pblteam4/Tingname/Temp");
                 picChart3.getData("http://140.118.25.64:23000/resources/qiot/things/107pblteam4/Tingname/4");
                 picChart4.getData("http://140.118.25.64:23000/resources/qiot/things/107pblteam4/Tingname/2");
-                // Repeat this the same runnable code block again another 2 seconds
-                // 'this' is referencing the Runnable object
+
                 handler.postDelayed(this, 1000);
 
             }
@@ -186,93 +170,6 @@ public class FullscreenActivity extends AppCompatActivity {
 
 
 
-
-
-
-
-        /*
-
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference luxRef = database.getReference("lux");
-        DatabaseReference tempRef = database.getReference("temp");
-        DatabaseReference rainValueRef = database.getReference("RainValue");
-        DatabaseReference moistureValueRef = database.getReference("moistureValue");
-
-        luxRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
-                int value = dataSnapshot.getValue(Integer.class);
-                setChart(picChart,"lux",value,100);
-
-                Log.d("firebase", "Value is: " + String.valueOf(value));
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-                // Failed to read value
-                Log.w("firebase", "Failed to read value.", error.toException());
-            }
-        });
-        tempRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
-                int value = dataSnapshot.getValue(Integer.class);
-                setChart(picChart2,"temp",value,50);
-
-                Log.d("firebase", "Value is: " + String.valueOf(value));
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-                // Failed to read value
-                Log.w("firebase", "Failed to read value.", error.toException());
-            }
-        });
-        rainValueRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
-                int value = dataSnapshot.getValue(Integer.class);
-                setChart(picChart3,"rain",value,100);
-
-                Log.d("firebase", "Value is: " + String.valueOf(value));
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-                // Failed to read value
-                Log.w("firebase", "Failed to read value.", error.toException());
-            }
-        });
-      */
-        /*
-        moistureValueRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
-                int value = dataSnapshot.getValue(Integer.class);
-                setChart(picChart4,"moisture",value,100);
-
-                Log.d("firebase", "Value is: " + String.valueOf(value));
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-                // Failed to read value
-                Log.w("firebase", "Failed to read value.", error.toException());
-            }
-        });
-*/
 
         weatherServices = API.getApi().create(WeatherServices.class);
         Call<CityWeather> cityWeather = weatherServices.getWeatherCity("taipei", API.KEY, "metric",6);
@@ -293,10 +190,6 @@ public class FullscreenActivity extends AppCompatActivity {
 
 
 
-                    //cities.add(cityWeather);
-                    //adapter.notifyItemInserted(cities.size()-1);
-                    //recyclerView.scrollToPosition(cities.size()-1);
-
                 }else{
                     Toast.makeText(FullscreenActivity.this,"Sorry, city not found",Toast.LENGTH_LONG).show();
                 }
@@ -308,9 +201,116 @@ public class FullscreenActivity extends AppCompatActivity {
         });
 
 
+        chart = findViewById(R.id.lineChart);
+
+        // background color
+        chart.setBackgroundColor(Color.WHITE);
+
+        // disable description text
+        chart.getDescription().setEnabled(false);
+
+        // enable touch gestures
+        //chart.setTouchEnabled(true);
+
+        // set listeners
+        //chart.setOnChartValueSelectedListener(this);
+        chart.setDrawGridBackground(false);
 
 
 
+        // enable scaling and dragging
+        chart.setDragEnabled(true);
+        chart.setScaleEnabled(true);
+        // chart.setScaleXEnabled(true);
+        // chart.setScaleYEnabled(true);
+
+        // force pinch zoom along both axis
+        chart.setPinchZoom(true);
+        XAxis xAxis;
+        {   // // X-Axis Style // //
+            xAxis = chart.getXAxis();
+
+            // vertical grid lines
+            xAxis.enableGridDashedLine(10f, 10f, 0f);
+        }
+
+        YAxis yAxis;
+        {   // // Y-Axis Style // //
+            yAxis = chart.getAxisLeft();
+
+            // disable dual axis (only use LEFT axis)
+            chart.getAxisRight().setEnabled(false);
+
+            // horizontal grid lines
+            yAxis.enableGridDashedLine(10f, 10f, 0f);
+
+            // axis range
+            yAxis.setAxisMaximum(200f);
+            yAxis.setAxisMinimum(-50f);
+        }
+
+
+        {   // // Create Limit Lines // //
+            LimitLine llXAxis = new LimitLine(9f, "Index 10");
+            llXAxis.setLineWidth(4f);
+            llXAxis.enableDashedLine(10f, 10f, 0f);
+            llXAxis.setLabelPosition(LimitLine.LimitLabelPosition.RIGHT_BOTTOM);
+            llXAxis.setTextSize(10f);
+            //llXAxis.setTypeface(tfRegular);
+
+            LimitLine ll1 = new LimitLine(150f, "Upper Limit");
+            ll1.setLineWidth(4f);
+            ll1.enableDashedLine(10f, 10f, 0f);
+            ll1.setLabelPosition(LimitLine.LimitLabelPosition.RIGHT_TOP);
+            ll1.setTextSize(10f);
+            //ll1.setTypeface(tfRegular);
+
+            LimitLine ll2 = new LimitLine(-30f, "Lower Limit");
+            ll2.setLineWidth(4f);
+            ll2.enableDashedLine(10f, 10f, 0f);
+            ll2.setLabelPosition(LimitLine.LimitLabelPosition.RIGHT_BOTTOM);
+            ll2.setTextSize(10f);
+            //ll2.setTypeface(tfRegular);
+
+            // draw limit lines behind data instead of on top
+            yAxis.setDrawLimitLinesBehindData(true);
+            xAxis.setDrawLimitLinesBehindData(true);
+
+            // add limit lines
+            yAxis.addLimitLine(ll1);
+            yAxis.addLimitLine(ll2);
+            //xAxis.addLimitLine(llXAxis);
+        }
+
+        // add data
+
+        // draw points over time
+        chart.animateX(1500);
+
+        new Thread(new Runnable() {
+            public void run() {
+
+            }
+        }).start();
+
+        new AsyncTask<Void, Void, ArrayList<Entry>>() {
+
+            @Override
+            protected ArrayList<Entry>   doInBackground( Void... voids ) {
+                //Do things...
+                return       testmongo();
+
+            }
+            @Override
+            protected void onPostExecute(ArrayList<Entry> values) {
+
+                System.out.println("onPostExecute onPostExecute onPostExecute");
+
+                Log.i("Task", "onPostExecute");
+
+                setData(values);
+            }
+        }.execute();
 
     }
     void setChart(PieChart chart ,String  text ,float value ,float max){
@@ -500,5 +500,111 @@ public class FullscreenActivity extends AppCompatActivity {
     }
 
 
+    ArrayList<Entry>  testmongo(){
+
+        ArrayList<Entry> values = new ArrayList<>();
+
+
+
+        MongoClient mongoClient = new MongoClient( "140.118.172.200" , 27017 );
+
+        // 连接到数据库
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("iot");
+        System.out.println("Connect to database successfully");
+
+        MongoCollection<Document> collection = mongoDatabase.getCollection("temp");
+
+        FindIterable<Document> findIterable = collection.find().limit(50);
+        MongoCursor<Document> mongoCursor = findIterable.iterator();
+        System.out.println(mongoCursor.next());
+        float i=1;
+        while(mongoCursor.hasNext()){
+
+            Document doc =mongoCursor.next();
+            Document payload =(Document) doc.get("payload");
+
+
+            values.add(new Entry(i,  Float.valueOf(String.valueOf( payload.get("value")))));
+            System.out.println("mongod"+String.valueOf( payload.get("value")));
+
+            i++;
+
+        }
+
+
+        System.out.println("集合 test 选择成功");
+        return values ;
+    }
+
+
+    private void setData(ArrayList<Entry>  values) {
+
+
+
+
+        LineDataSet set1;
+
+        if (chart.getData() != null &&
+                chart.getData().getDataSetCount() > 0) {
+            set1 = (LineDataSet) chart.getData().getDataSetByIndex(0);
+            set1.setValues(values);
+            set1.notifyDataSetChanged();
+            chart.getData().notifyDataChanged();
+            chart.notifyDataSetChanged();
+        } else {
+            // create a dataset and give it a type
+            set1 = new LineDataSet(values, "DataSet 1");
+
+            set1.setDrawIcons(false);
+
+            // draw dashed line
+            set1.enableDashedLine(10f, 5f, 0f);
+
+            // black lines and points
+            set1.setColor(Color.BLACK);
+            set1.setCircleColor(Color.BLACK);
+
+            // line thickness and point size
+            set1.setLineWidth(1f);
+            set1.setCircleRadius(3f);
+
+            // draw points as solid circles
+            set1.setDrawCircleHole(false);
+
+            // customize legend entry
+            set1.setFormLineWidth(1f);
+            set1.setFormLineDashEffect(new DashPathEffect(new float[]{10f, 5f}, 0f));
+            set1.setFormSize(15.f);
+
+            // text size of values
+            set1.setValueTextSize(9f);
+
+            // draw selection line as dashed
+            set1.enableDashedHighlightLine(10f, 5f, 0f);
+
+            // set the filled area
+            set1.setDrawFilled(true);
+            set1.setFillFormatter(new IFillFormatter() {
+                @Override
+                public float getFillLinePosition(ILineDataSet dataSet, LineDataProvider dataProvider) {
+                    return chart.getAxisLeft().getAxisMinimum();
+                }
+            });
+
+
+
+            ArrayList<ILineDataSet> dataSets = new ArrayList<>();
+            dataSets.add(set1);
+
+            LineData data = new LineData(dataSets);
+
+            chart.setData(data);
+        }
+    }
+
+
 
 }
+
+
+
